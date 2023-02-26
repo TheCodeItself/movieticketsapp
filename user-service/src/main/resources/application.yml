@@ -1,0 +1,40 @@
+spring:
+  application:
+    name: user-service
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${MOVIE_TICKETS_AUTH_ISSUER_URI}
+          jwk-set-uri: ${MOVIE_TICKETS_AUTH_JWK_SET_URI}
+  jpa:
+    open-in-view: false
+  servlet:
+    multipart:
+      enabled: false
+
+larasierra:
+  cognito:
+    userpool: ${MOVIE_TICKETS_AUTH_USER_POOL_ID}
+
+server:
+  port: 0
+
+eureka:
+  instance:
+    leaseRenewalIntervalInSeconds: 1
+    leaseExpirationDurationInSeconds: 4
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
+    healthcheck:
+      enabled: true
+
+logging:
+  level:
+    org:
+      springframework:
+        web:
+          filter:
+            CommonsRequestLoggingFilter: DEBUG
+        security: DEBUG

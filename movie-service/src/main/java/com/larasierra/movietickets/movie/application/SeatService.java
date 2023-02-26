@@ -1,0 +1,106 @@
+package com.larasierra.movietickets.movie.application;
+
+import com.larasierra.movietickets.movie.domain.Seat;
+import com.larasierra.movietickets.movie.external.jpa.SeatRepository;
+import com.larasierra.movietickets.movie.model.seat.FullSeatResponse;
+import com.larasierra.movietickets.movie.model.seat.PublicSeatResponse;
+import com.larasierra.movietickets.movie.model.seat.ReserveSeatForOrderRequest;
+import com.larasierra.movietickets.movie.model.seat.ReserveSeatForCartRequest;
+import com.larasierra.movietickets.shared.exception.AppResourceLockedException;
+import com.larasierra.movietickets.shared.util.IdUtil;
+import jakarta.transaction.Transactional;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.stereotype.Service;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
+
+@Service
+public class SeatService {
+    private final SeatRepository seatRepository;
+
+    public SeatService(SeatRepository seatRepository) {
+        this.seatRepository = seatRepository;
+    }
+
+    public void createSeats(String showtimeId) {
+        // create seats for the showtime
+        // every seat id will start with the showtime, following by the seat number, separated by a "-" (0SRT4T4FR9L27-A14)
+        // the seat number by default will be the row letter following by the seat number in that row (2nd row and 5th seat will be B5)
+    }
+
+    @PreAuthorize("hasRole('enduser')")
+    @Transactional
+    public void reserveForCart(String seatId, ReserveSeatForCartRequest request) {
+        int count = seatRepository.reserveForCart(seatId, request.seatToken(), request.purchaseToken());
+        if (count < 1) {
+            throw new AppResourceLockedException();
+        }
+    }
+
+    @PreAuthorize("hasRole('enduser')")
+    @Transactional
+    public List<FullSeatResponse> reserveForOrder(ReserveSeatForOrderRequest request) {
+        List<Seat> seats = seatRepository.reserveForCart(request.seats(), request.userToken());
+
+        if (seats.size() != request.seats().size()) {
+            throw new AppResourceLockedException();
+        }
+
+        return seats.stream()
+                .map(this::toFullResponse)
+                .toList();
+    }
+
+    @PreAuthorize("permitAll()")
+    public Optional<PublicSeatResponse> findById(String seatId) {
+        return seatRepository.findById(seatId)
+                .map(this::toPublicResponse);
+    }
+
+    @PreAuthorize("permitAll()")
+    public List<PublicSeatResponse> findAllByShowtimeId(String showtimeId) {
+        return seatRepository.findAllByShowtimeId(showtimeId).stream()
+                .map(this::toPublicResponse)
+                .toList();
+    }
+
+    private FullSeatResponse toFullResponse(Seat seat) {
+        return new FullSeatResponse(
+                seat.getSeatId(),
+                seat.getShowtimeId(),
+                seat.getAvailable(),
+                seat.getPurchaseToken(),
+                seat.getOrderId(),
+                seat.getCreatedAt()
+        );
+    }
+
+    private PublicSeatResponse toPublicResponse(Seat seat) {
+        String purchaseToken = shouldIncludePurchaseToken(seat) ? seat.getPurchaseToken()
+                                                        : null;
+        return new PublicSeatResponse(
+                seat.getSeatId(),
+                seat.getShowtimeId(),
+                seat.getAvailable(),
+                purchaseToken,
+                seat.getCreatedAt()
+        );
+    }
+
+    private boolean shouldIncludePurchaseToken(Seat seat) {
+        // if it is not available, or it has an orderId, or it does not have a token, do not include the token
+        if (!seat.getAvailable() || seat.getOrderId() != null || seat.getPurchaseToken() == null) {
+            return false;
+        }
+
+        String timeSortedId = seat.getPurchaseToken().substring(0, 13);
+
+        Instant instant = IdUtil.extractInstant(timeSortedId);
+        Instant expiration = instant.plusSeconds(60 * 5);
+
+        // it must include the token only if expiration date is before the current date
+        return expiration.isBefore(Instant.now());
+    }
+}

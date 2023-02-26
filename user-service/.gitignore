@@ -1,0 +1,21 @@
+HELP.md
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# IntelliJ IDEA #
+.idea
+*.iws
+*.iml
+*.ipr
+
+# Package Files #
+*.jar
+*.war
+*.nar
+*.ear
+*.class
+*.zip
+*.tar.gz
+*.rar
