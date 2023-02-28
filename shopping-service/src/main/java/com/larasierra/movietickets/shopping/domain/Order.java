@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+@Builder
 @ToString(exclude = "items")
 @Getter @Setter
 @Table(name = "orders")
@@ -47,17 +48,7 @@ public class Order {
 
     public Order() {}
 
-    public Order(String orderId, String userId, String purchaseToken, Boolean paid, Boolean cancel, Long totalCents, OffsetDateTime createdAt) {
-        this.orderId = orderId;
-        this.userId = userId;
-        this.purchaseToken = purchaseToken;
-        this.paid = paid;
-        this.cancel = cancel;
-        this.totalCents = totalCents;
-        this.createdAt = createdAt;
-    }
-
-    public void addItem(OrderItem orderItem) {
+    public void addItem(@NotNull OrderItem orderItem) {
         orderItem.setOrder(this);
         items.add(orderItem);
     }

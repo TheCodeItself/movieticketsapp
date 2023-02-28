@@ -10,6 +10,7 @@ import lombok.*;
 import java.time.OffsetDateTime;
 import java.util.Objects;
 
+@Builder
 @ToString(exclude = "order")
 @Getter @Setter
 @Table(name = "order_item")
@@ -52,16 +53,6 @@ public class OrderItem extends BaseEntity<String> {
     }
 
     public OrderItem() {}
-
-    public OrderItem(String orderItemId, String orderId, String userId, String seatId, String ticketType, Integer priceCents, OffsetDateTime createdAt) {
-        this.orderItemId = orderItemId;
-        this.orderId = orderId;
-        this.userId = userId;
-        this.seatId = seatId;
-        this.ticketType = ticketType;
-        this.priceCents = priceCents;
-        this.createdAt = createdAt;
-    }
 
     public void setOrder(@NotNull Order order) {
         this.order = order;
