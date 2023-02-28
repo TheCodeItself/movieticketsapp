@@ -8,6 +8,8 @@ import com.larasierra.movietickets.shopping.external.apiclient.SeatApiClient;
 import com.larasierra.movietickets.shopping.external.jpa.OrderRepository;
 import com.larasierra.movietickets.shopping.model.cart.ShoppingCartItemResponse;
 import com.larasierra.movietickets.shopping.model.order.CreateOrderRequest;
+import com.larasierra.movietickets.shopping.model.order.DefaultOrderItemResponse;
+import com.larasierra.movietickets.shopping.model.order.DefaultOrderResponse;
 import com.larasierra.movietickets.shopping.model.seat.ReserveSeatForOrderRequest;
 import com.larasierra.movietickets.shopping.model.seat.ReserveSeatForOrderResponse;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -32,7 +34,7 @@ public class OrderService {
     }
 
     @PreAuthorize("hasRole('enduser')")
-    public void create(CreateOrderRequest request) {
+    public DefaultOrderResponse create(CreateOrderRequest request) {
         // TODO: 26/02/2023 validate purchase token
 
         // 1. get items from shopping cart
@@ -52,6 +54,8 @@ public class OrderService {
         orderRepository.markPaid(order.getOrderId());
 
         // 6. if the charged is not successful, allow the user to try again
+
+        return toDefaultResponse(order);
     }
 
     private ReserveSeatForOrderRequest buildReserveSeatForOrderRequest(List<ShoppingCartItemResponse> cartItems, String purchaseToken) {
@@ -63,29 +67,60 @@ public class OrderService {
     }
 
     private Order buildOrder(List<ShoppingCartItemResponse> cartItems, String purchaseToken) {
-        final var order = new Order(
-                IdUtil.next(),
-                authInfo.userId(),
-                purchaseToken,
-                false,
-                false,
-                null,
-                OffsetDateTime.now()
-        );
+        long totalCents = cartItems.stream()
+                .mapToLong(ShoppingCartItemResponse::priceCents)
+                .sum();
+
+        final var order = Order.builder()
+                .orderId(IdUtil.next())
+                .userId(authInfo.userId())
+                .purchaseToken(purchaseToken)
+                .paid(false)
+                .cancel(false)
+                .totalCents(totalCents)
+                .createdAt(OffsetDateTime.now())
+                .build();
 
         List<OrderItem> items = cartItems.stream()
-                .map(cartItem -> new OrderItem(
-                        IdUtil.next(),
-                        order.getOrderId(),
-                        authInfo.userId(),
-                        cartItem.seatId(),
-                        cartItem.ticketType(),
-                        null,
-                        OffsetDateTime.now()
-                ))
+                .map(cartItem ->
+                    OrderItem.builder()
+                        .orderItemId(IdUtil.next())
+                        .orderId(order.getOrderId())
+                        .userId(authInfo.userId())
+                        .seatId(cartItem.seatId())
+                        .ticketType(cartItem.ticketType())
+                        .priceCents(cartItem.priceCents())
+                        .createdAt(OffsetDateTime.now())
+                        .build()
+                )
                 .toList();
 
         order.addItems(items);
         return order;
+    }
+
+    private DefaultOrderResponse toDefaultResponse(Order order) {
+        List<DefaultOrderItemResponse> items = order.getItems().stream()
+                .map(item -> new DefaultOrderItemResponse(
+                        item.getOrderItemId(),
+                        item.getOrderId(),
+                        item.getUserId(),
+                        item.getSeatId(),
+                        item.getTicketType(),
+                        item.getPriceCents(),
+                        item.getCreatedAt()
+                ))
+                .toList();
+
+        return new DefaultOrderResponse(
+                order.getOrderId(),
+                order.getUserId(),
+                order.getPurchaseToken(),
+                order.getPaid(),
+                order.getCancel(),
+                order.getTotalCents(),
+                order.getCreatedAt(),
+                items
+        );
     }
 }

@@ -4,12 +4,11 @@ import com.larasierra.movietickets.shared.domain.BaseEntity;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
+@Builder
 @EqualsAndHashCode(callSuper = false)
 @NoArgsConstructor
 @AllArgsConstructor
@@ -22,6 +21,10 @@ public class ShoppingCartItem extends BaseEntity<ShoppingCartItemPk> {
 
     @NotNull
     private String ticketType;
+
+    @Min(1)
+    @NotNull
+    private Integer priceCents;
 
     @Override
     public ShoppingCartItemPk getId() {

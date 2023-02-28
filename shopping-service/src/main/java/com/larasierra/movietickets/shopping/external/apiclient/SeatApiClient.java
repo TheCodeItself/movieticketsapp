@@ -1,5 +1,6 @@
 package com.larasierra.movietickets.shopping.external.apiclient;
 
+import com.larasierra.movietickets.shopping.model.seat.RemovePurchaseTokenRequest;
 import com.larasierra.movietickets.shopping.model.seat.ReserveSeatForCartApiRequest;
 import com.larasierra.movietickets.shopping.model.seat.ReserveSeatForOrderRequest;
 import com.larasierra.movietickets.shopping.model.seat.ReserveSeatForOrderResponse;
@@ -15,6 +16,9 @@ public interface SeatApiClient {
 
     @PostMapping("/seat/{id}/reserve-for-cart")
     void reserveForCart(@PathVariable("id") String seatId, @RequestBody ReserveSeatForCartApiRequest request);
+
+    @PostMapping("/seat/{id}/remove-purchase-token")
+    void removePurchaseToken(@PathVariable("id") String seatId, @RequestBody RemovePurchaseTokenRequest request);
 
     @PostMapping("/seat/reserve-for-order")
     List<ReserveSeatForOrderResponse> reserveForOrder(@RequestBody ReserveSeatForOrderRequest request);
