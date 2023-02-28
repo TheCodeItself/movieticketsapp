@@ -29,7 +29,7 @@ spring:
       - id: shopping-service
         uri: lb://shopping-service
         predicates:
-          - Path=/order/**, /shopping-cart/**
+          - Path=/order/**, /cart/**
   security:
     oauth2:
       client:
