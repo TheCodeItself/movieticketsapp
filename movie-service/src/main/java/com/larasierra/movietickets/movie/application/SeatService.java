@@ -55,12 +55,22 @@ public class SeatService {
                 .toList();
     }
 
+    /**
+     * Find the seat information for the given seatId. The seat will include the purchase token if it has expired and is still available for be purchase.
+     * @param seatId the id of the seat
+     * @return the seat for the given id
+     */
     @PreAuthorize("permitAll()")
     public Optional<PublicSeatResponse> findById(String seatId) {
         return seatRepository.findById(seatId)
                 .map(this::toPublicResponse);
     }
 
+    /**
+     * Find all the seats for a given showtimeId. Each seat will include the purchase token if it has expired and is still available for be purchase.
+     * @param showtimeId the id of the showtime to which the seats belong
+     * @return a list of the seats found
+     */
     @PreAuthorize("permitAll()")
     public List<PublicSeatResponse> findAllByShowtimeId(String showtimeId) {
         return seatRepository.findAllByShowtimeId(showtimeId).stream()
