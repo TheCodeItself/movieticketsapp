@@ -2,10 +2,7 @@ package com.larasierra.movietickets.movie.application;
 
 import com.larasierra.movietickets.movie.domain.Seat;
 import com.larasierra.movietickets.movie.external.jpa.SeatRepository;
-import com.larasierra.movietickets.movie.model.seat.FullSeatResponse;
-import com.larasierra.movietickets.movie.model.seat.PublicSeatResponse;
-import com.larasierra.movietickets.movie.model.seat.ReserveSeatForOrderRequest;
-import com.larasierra.movietickets.movie.model.seat.ReserveSeatForCartRequest;
+import com.larasierra.movietickets.movie.model.seat.*;
 import com.larasierra.movietickets.shared.exception.AppResourceLockedException;
 import com.larasierra.movietickets.shared.util.IdUtil;
 import jakarta.transaction.Transactional;
@@ -37,6 +34,11 @@ public class SeatService {
         if (count < 1) {
             throw new AppResourceLockedException();
         }
+    }
+
+    @PreAuthorize("hasRole('enduser')")
+    public void removePurchaseToken(String seatId, RemovePurchaseTokenRequest request) {
+        seatRepository.removePurchaseToken(seatId, request.purchaseToken());
     }
 
     @PreAuthorize("hasRole('enduser')")
@@ -89,6 +91,14 @@ public class SeatService {
         );
     }
 
+    /**
+     * Determine if the purchase token needs to be added to the response. This method returns false when the
+     * seat is not available, or it has an orderId, or it does not have a token, or if the token has not expired yet.
+     * It will return true only if the user that generated the token at first did not complete the purchase before the
+     * token expired
+     * @param seat the seat to be evaluated
+     * @return true if the purchase token must be included in the response
+     */
     private boolean shouldIncludePurchaseToken(Seat seat) {
         // if it is not available, or it has an orderId, or it does not have a token, do not include the token
         if (!seat.getAvailable() || seat.getOrderId() != null || seat.getPurchaseToken() == null) {

@@ -21,6 +21,14 @@ public interface SeatRepository extends JpaRepository<Seat, String> {
         where s.seatId = :seatId and s.purchaseToken = :seatToken and s.available = true""")
     int reserveForCart(@Param("seatId") String seatId, @Param("seatToken") String seatToken, @Param("userToken") String userToken);
 
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    @Modifying
+    @Query("""
+        update Seat s
+        set s.purchaseToken = null
+        where s.seatId = :seatId and s.purchaseToken = :userToken and s.available = true""")
+    void removePurchaseToken(@Param("seatId") String seatId, @Param("userToken") String userToken);
+
     @Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.MANDATORY)
     @Query(value = """
         update seat
