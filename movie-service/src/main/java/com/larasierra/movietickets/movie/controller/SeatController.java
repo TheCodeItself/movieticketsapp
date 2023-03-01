@@ -5,6 +5,7 @@ import com.larasierra.movietickets.movie.model.seat.*;
 import com.larasierra.movietickets.shared.exception.AppResourceNotFoundException;
 import com.larasierra.movietickets.shared.validation.ValidId;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -18,6 +19,12 @@ public class SeatController {
 
     public SeatController(SeatService seatService) {
         this.seatService = seatService;
+    }
+
+    @PostMapping("/seat")
+    public ResponseEntity<Void> create(@Valid @RequestBody CreateSeatsForShowtime request) {
+        seatService.createSeats(request.showtimeId());
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @PostMapping("/seat/{id}/reserve-for-cart")

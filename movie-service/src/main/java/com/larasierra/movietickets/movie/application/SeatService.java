@@ -2,7 +2,11 @@ package com.larasierra.movietickets.movie.application;
 
 import com.larasierra.movietickets.movie.domain.Seat;
 import com.larasierra.movietickets.movie.external.jpa.SeatRepository;
+import com.larasierra.movietickets.movie.model.screen.DefaultScreenResponse;
 import com.larasierra.movietickets.movie.model.seat.*;
+import com.larasierra.movietickets.movie.model.showtime.DefaultShowtimeResponse;
+import com.larasierra.movietickets.shared.exception.AppBadRequestException;
+import com.larasierra.movietickets.shared.exception.AppInternalErrorException;
 import com.larasierra.movietickets.shared.exception.AppResourceLockedException;
 import com.larasierra.movietickets.shared.util.IdUtil;
 import jakarta.transaction.Transactional;
@@ -10,21 +14,87 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 @Service
 public class SeatService {
     private final SeatRepository seatRepository;
+    private final ShowtimeService showtimeService;
 
-    public SeatService(SeatRepository seatRepository) {
+    private final ScreenService screenService;
+
+    public SeatService(SeatRepository seatRepository, ShowtimeService showtimeService, ScreenService screenService) {
         this.seatRepository = seatRepository;
+        this.showtimeService = showtimeService;
+        this.screenService = screenService;
     }
 
+    @PreAuthorize("hasRole('internal')")
+    @Transactional
     public void createSeats(String showtimeId) {
+        DefaultShowtimeResponse showtime = showtimeService.findById(showtimeId)
+                .orElseThrow(() -> new AppBadRequestException("invalid showtimeId param"));
+        DefaultScreenResponse screen = screenService.findById(showtime.screenId())
+                .orElseThrow(AppInternalErrorException::new);
+
+        List<Seat> seats = generateSeats(showtimeId, screen.seatingCapacity());
+
         // create seats for the showtime
-        // every seat id will start with the showtime, following by the seat number, separated by a "-" (0SRT4T4FR9L27-A14)
-        // the seat number by default will be the row letter following by the seat number in that row (2nd row and 5th seat will be B5)
+        seatRepository.saveAll(seats);
+    }
+
+    /**
+     * Every seat id will start with the showtime, following by the seat number, separated by a "-" (0SRT4T4FR9L27-A14).
+     * The seat number by default will be the row letter following by the seat number in that row (2nd row and 5th seat will be B5)
+     * @param showtimeId the id of the showtime for which the seats will be generated
+     * @param seatingCapacity the number of seats
+     * @return a list of Seat
+     */
+    private List<Seat> generateSeats(String showtimeId, short seatingCapacity) {
+        int maxSeatsPerRow = 20;
+        // number of rows with the maxSeatsPerRow
+        int fullRows = seatingCapacity / maxSeatsPerRow;
+        // number of seats in the last row in the case that that row does not fit the maxSeatsPerRow
+        int lastRowSeatCapacity = seatingCapacity % maxSeatsPerRow;
+
+        List<Seat> seats = new ArrayList<>(seatingCapacity);
+
+        // 65 represents the letter 'A' in ascii
+        for (int row = 65; row < 65 + fullRows; row++) {
+            String rowPrefix = showtimeId + "-" + (char)row;
+            for (int seatNum = 1; seatNum <= maxSeatsPerRow; seatNum++) {
+                Seat seat = Seat.builder()
+                        .seatId(rowPrefix + seatNum)
+                        .showtimeId(showtimeId)
+                        .available(true)
+                        .purchaseToken(null)
+                        .orderId(null)
+                        .createdAt(OffsetDateTime.now())
+                        .build();
+
+                seats.add(seat);
+            }
+        }
+
+        // last row
+        String lastRowPrefix = showtimeId + "-" + (char)(65 + fullRows);
+        for (int seatNum = 1; seatNum <= lastRowSeatCapacity; seatNum++) {
+            Seat seat = Seat.builder()
+                    .seatId(lastRowPrefix + seatNum)
+                    .showtimeId(showtimeId)
+                    .available(true)
+                    .purchaseToken(null)
+                    .orderId(null)
+                    .createdAt(OffsetDateTime.now())
+                    .build();
+
+            seats.add(seat);
+        }
+
+        return seats;
     }
 
     @PreAuthorize("hasRole('enduser')")
