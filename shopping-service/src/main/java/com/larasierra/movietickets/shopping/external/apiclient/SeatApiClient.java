@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.List;
 
-@FeignClient(name = "movie-service")
+@FeignClient(name = "movie-service", contextId = "contextId-SeatApiClient")
 public interface SeatApiClient {
 
     @PostMapping("/seat/{id}/reserve-for-cart")
