@@ -11,6 +11,7 @@ import java.time.OffsetDateTime;
 import java.util.Objects;
 
 @Builder
+@AllArgsConstructor
 @ToString(exclude = "order")
 @Getter @Setter
 @Table(name = "order_item")
@@ -19,31 +20,37 @@ public class OrderItem extends BaseEntity<String> {
 
     @ValidId
     @Id
+    @Column(name = "order_item_id")
     private String orderItemId;
 
     @ValidId
     @NotNull
+    @Column(name = "order_id")
     private String orderId;
 
     @ValidId
     @NotNull
+    @Column(name = "user_id")
     private String userId;
 
-    @ValidId
     @NotNull
+    @Column(name = "seat_id")
     private String seatId;
 
     @NotNull
+    @Column(name = "ticket_type")
     private String ticketType;
 
     @Min(1)
     @NotNull
+    @Column(name = "price_cents")
     private Integer priceCents;
 
     @NotNull
+    @Column(name = "created_at")
     private OffsetDateTime createdAt;
 
-    @JoinColumn(name = "order_id", insertable = false, updatable = false)
+    @JoinColumn(name = "order_id", referencedColumnName = "order_id", insertable = false, updatable = false)
     @ManyToOne(fetch = FetchType.LAZY)
     private Order order;
 

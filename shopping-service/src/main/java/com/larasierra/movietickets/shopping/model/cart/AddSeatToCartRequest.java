@@ -7,7 +7,7 @@ public record AddSeatToCartRequest(
    String seatId,
    @NotNull
    String ticketType,
-
    String seatToken,
+   @NotNull
    String purchaseToken
 ) {}

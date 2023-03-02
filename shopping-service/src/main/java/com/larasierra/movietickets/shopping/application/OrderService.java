@@ -11,7 +11,6 @@ import com.larasierra.movietickets.shopping.model.order.CreateOrderRequest;
 import com.larasierra.movietickets.shopping.model.order.DefaultOrderItemResponse;
 import com.larasierra.movietickets.shopping.model.order.DefaultOrderResponse;
 import com.larasierra.movietickets.shopping.model.seat.ReserveSeatForOrderRequest;
-import com.larasierra.movietickets.shopping.model.seat.ReserveSeatForOrderResponse;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
@@ -38,11 +37,12 @@ public class OrderService {
         // TODO: 26/02/2023 validate purchase token
 
         // 1. get items from shopping cart
+        // cartItems must be emptied after a successful order
         List<ShoppingCartItemResponse> cartItems = shoppingCartService.findAllUserItems();
 
         // 2. checks if the seats are available, if so, mark them as no available (this way, even if the token expires, other users can not try to buy them)
         var reserveForOrderRequest = buildReserveSeatForOrderRequest(cartItems, request.purchaseToken());
-        List<ReserveSeatForOrderResponse> seats = seatApiClient.reserveForOrder(reserveForOrderRequest);
+        seatApiClient.reserveForOrder(reserveForOrderRequest);
 
         // 3. create the order
         var order = buildOrder(cartItems, request.purchaseToken());
