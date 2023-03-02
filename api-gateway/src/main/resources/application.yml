@@ -21,7 +21,7 @@ spring:
       - id: movie-service
         uri: lb://movie-service
         predicates:
-          - Path=/movie/**
+          - Path=/movie/**, /screen/**, /seat/**, /showtime/**, /theater/**
       - id: movie-media-service
         uri: lb://movie-media-service
         predicates:

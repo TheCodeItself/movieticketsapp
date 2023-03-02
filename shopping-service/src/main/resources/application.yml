@@ -9,6 +9,10 @@ spring:
           jwk-set-uri: ${MOVIE_TICKETS_AUTH_JWK_SET_URI}
   jpa:
     open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+    show-sql: true
 
   datasource:
     url: ${MOVIE_TICKETS_POSTGRESQL_URL}
