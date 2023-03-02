@@ -58,6 +58,7 @@ public class ShoppingCartService {
 
     @PreAuthorize("hasRole('enduser')")
     public void addSeatToCart(AddSeatToCartRequest request) {
+        // TODO: 01/03/2023 token expiration need to be validated too
         validateUserPurchaseToken(request.purchaseToken());
 
         try {

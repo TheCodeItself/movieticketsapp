@@ -1,6 +1,7 @@
 package com.larasierra.movietickets.shopping.domain;
 
 import com.larasierra.movietickets.shared.domain.BaseEntity;
+import jakarta.persistence.Column;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
@@ -20,10 +21,12 @@ public class ShoppingCartItem extends BaseEntity<ShoppingCartItemPk> {
     private ShoppingCartItemPk shoppingCartItemPk;
 
     @NotNull
+    @Column(name = "ticket_type")
     private String ticketType;
 
     @Min(1)
     @NotNull
+    @Column(name = "price_cents")
     private Integer priceCents;
 
     @Override

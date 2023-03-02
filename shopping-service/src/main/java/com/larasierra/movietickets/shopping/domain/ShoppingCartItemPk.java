@@ -1,6 +1,7 @@
 package com.larasierra.movietickets.shopping.domain;
 
 import com.larasierra.movietickets.shared.validation.ValidId;
+import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -20,8 +21,10 @@ public class ShoppingCartItemPk implements Serializable {
 
     @ValidId
     @NotNull
+    @Column(name = "user_id")
     private String userId;
 
     @NotNull
+    @Column(name = "seat_id")
     private String seatId;
 }
