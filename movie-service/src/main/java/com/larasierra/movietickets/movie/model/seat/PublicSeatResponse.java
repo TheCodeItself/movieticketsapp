@@ -6,6 +6,5 @@ public record PublicSeatResponse(
         String seatId,
         String showtimeId,
         Boolean available,
-        String purchaseToken,
-        OffsetDateTime createdAt
+        String purchaseToken
 ) {}

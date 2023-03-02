@@ -100,6 +100,7 @@ public class SeatService {
     @PreAuthorize("hasRole('enduser')")
     @Transactional
     public void reserveForCart(String seatId, ReserveSeatForCartRequest request) {
+        // TODO: 01/03/2023 valid that the user can use the purchaseToken
         int count = seatRepository.reserveForCart(seatId, request.seatToken(), request.purchaseToken());
         if (count < 1) {
             throw new AppResourceLockedException();
@@ -108,12 +109,14 @@ public class SeatService {
 
     @PreAuthorize("hasRole('enduser')")
     public void removePurchaseToken(String seatId, RemovePurchaseTokenRequest request) {
+        // TODO: 01/03/2023 valid that the user can use the purchaseToken
         seatRepository.removePurchaseToken(seatId, request.purchaseToken());
     }
 
     @PreAuthorize("hasRole('enduser')")
     @Transactional
     public List<FullSeatResponse> reserveForOrder(ReserveSeatForOrderRequest request) {
+        // TODO: 01/03/2023 valid that the user can use the purchaseToken
         List<Seat> seats = seatRepository.reserveForCart(request.seats(), request.userToken());
 
         if (seats.size() != request.seats().size()) {
@@ -132,6 +135,7 @@ public class SeatService {
      */
     @PreAuthorize("permitAll()")
     public Optional<PublicSeatResponse> findById(String seatId) {
+        // TODO: 01/03/2023 The seat will include the purchase token if it has expired and is still available for be purchase 
         return seatRepository.findById(seatId)
                 .map(this::toPublicResponse);
     }
@@ -143,6 +147,7 @@ public class SeatService {
      */
     @PreAuthorize("permitAll()")
     public List<PublicSeatResponse> findAllByShowtimeId(String showtimeId) {
+        // TODO: 01/03/2023 Each seat will include the purchase token if it has expired and is still available for be purchase 
         return seatRepository.findAllByShowtimeId(showtimeId).stream()
                 .map(this::toPublicResponse)
                 .toList();
@@ -166,8 +171,7 @@ public class SeatService {
                 seat.getSeatId(),
                 seat.getShowtimeId(),
                 seat.getAvailable(),
-                purchaseToken,
-                seat.getCreatedAt()
+                purchaseToken
         );
     }
 

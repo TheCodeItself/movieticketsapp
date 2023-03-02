@@ -30,8 +30,7 @@ public class Seat extends BaseEntity<String> {
     @NotNull
     private Boolean available;
 
-    @Size(min = 5)
-    @NotNull
+    @Size(min = 13)
     private String purchaseToken;
 
     @ValidId

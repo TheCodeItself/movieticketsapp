@@ -52,10 +52,10 @@ public class ShowtimeController {
     }
 
     @GetMapping("/showtime")
-    public List<DefaultShowtimeResponse> findByTheaterIdAndDate(
+    public List<DefaultShowtimeResponse> findAllByTheaterIdAndMovieIdAndDate(
             @ValidId @RequestParam("theaterId") String theaterId,
             @ValidId @RequestParam(value = "movieId", required = false) String movieId,
-            @RequestParam(required = false) OffsetDateTime startDate
+            @RequestParam(value = "startDate", required = false) OffsetDateTime startDate
     ) {
         return showtimeService.findAllByTheaterIdAndMovieIdAndDate(theaterId, movieId, startDate);
     }

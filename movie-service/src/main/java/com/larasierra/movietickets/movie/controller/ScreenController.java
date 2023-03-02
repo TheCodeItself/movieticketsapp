@@ -51,7 +51,7 @@ public class ScreenController {
     }
 
     @GetMapping("/screen")
-    public List<DefaultScreenResponse> findAllByTheater(@RequestParam("theater") String theater) {
+    public List<DefaultScreenResponse> findAllByTheater(@RequestParam("theaterId") String theater) {
         return screenService.findAllByTheater(theater);
     }
 }

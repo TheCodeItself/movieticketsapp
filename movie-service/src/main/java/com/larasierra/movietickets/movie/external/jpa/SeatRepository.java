@@ -1,6 +1,7 @@
 package com.larasierra.movietickets.movie.external.jpa;
 
 import com.larasierra.movietickets.movie.domain.Seat;
+import jakarta.annotation.Nullable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -18,8 +19,9 @@ public interface SeatRepository extends JpaRepository<Seat, String> {
     @Query("""
         update Seat s
         set s.purchaseToken = :userToken
-        where s.seatId = :seatId and s.purchaseToken = :seatToken and s.available = true""")
-    int reserveForCart(@Param("seatId") String seatId, @Param("seatToken") String seatToken, @Param("userToken") String userToken);
+        where s.seatId = :seatId and s.available = true
+            and ((:seatToken is null and s.purchaseToken is null) or s.purchaseToken = :seatToken)""")
+    int reserveForCart(@Param("seatId") String seatId, @Nullable @Param("seatToken") String seatToken, @Param("userToken") String userToken);
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
     @Modifying
