@@ -24,9 +24,10 @@ eureka:
   instance:
     leaseRenewalIntervalInSeconds: 1
     leaseExpirationDurationInSeconds: 4
+    prefer-ip-address: true
   client:
     serviceUrl:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: ${MOVIE_TICKETS_EUREKA_URL:http://localhost:8761/eureka/}
     healthcheck:
       enabled: true
 

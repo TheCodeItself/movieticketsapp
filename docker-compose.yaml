@@ -1,0 +1,80 @@
+version: '3'
+services:
+  api-gateway:
+    build:
+      context: ./
+      dockerfile: ./api-gateway/Dockerfile
+    depends_on:
+      - eureka-server
+      - movie-service
+      - movie-media-service
+      - user-service
+      - shopping-service
+    ports:
+      - "8080:8080"
+    environment:
+      MOVIE_TICKETS_EUREKA_URL: "http://eureka-server:8761/eureka"
+      MOVIE_TICKETS_AUTH_CLIENT_ID: ${MOVIE_TICKETS_AUTH_CLIENT_ID}
+      MOVIE_TICKETS_AUTH_CLIENT_SECRET: ${MOVIE_TICKETS_AUTH_CLIENT_SECRET}
+      MOVIE_TICKETS_AUTH_REDIRECT_URL: ${MOVIE_TICKETS_AUTH_REDIRECT_URL}
+      MOVIE_TICKETS_AUTH_ISSUER_URI: ${MOVIE_TICKETS_AUTH_ISSUER_URI}
+      MOVIE_TICKETS_AUTH_JWK_SET_URI: ${MOVIE_TICKETS_AUTH_JWK_SET_URI}
+  eureka-server:
+    build:
+      context: ./
+      dockerfile: ./eureka-server/Dockerfile
+  movie-media-service:
+    build:
+      context: ./
+      dockerfile: ./movie-media-service/Dockerfile
+    depends_on:
+      - eureka-server
+      - movie-service
+    environment:
+      MOVIE_TICKETS_EUREKA_URL: "http://eureka-server:8761/eureka"
+      MOVIE_TICKETS_AUTH_ISSUER_URI: ${MOVIE_TICKETS_AUTH_ISSUER_URI}
+      MOVIE_TICKETS_AUTH_JWK_SET_URI: ${MOVIE_TICKETS_AUTH_JWK_SET_URI}
+      MOVIE_TICKETS_POSTGRESQL_URL: ${MOVIE_TICKETS_POSTGRESQL_MEDIA_URL}
+      MOVIE_TICKETS_POSTGRESQL_USERNAME: ${MOVIE_TICKETS_POSTGRESQL_MEDIA_USERNAME}
+      MOVIE_TICKETS_POSTGRESQL_PASSWORD: ${MOVIE_TICKETS_POSTGRESQL_MEDIA_PASSWORD}
+      MOVIE_TICKETS_AWS_MEDIA_SERVICE_ACCESS_KEY: ${MOVIE_TICKETS_AWS_MEDIA_SERVICE_ACCESS_KEY}
+      MOVIE_TICKETS_AWS_MEDIA_SERVICE_SECRET_KEY: ${MOVIE_TICKETS_AWS_MEDIA_SERVICE_SECRET_KEY}
+  movie-service:
+    build:
+      context: ./
+      dockerfile: ./movie-service/Dockerfile
+    depends_on:
+      - eureka-server
+    environment:
+      MOVIE_TICKETS_EUREKA_URL: "http://eureka-server:8761/eureka"
+      MOVIE_TICKETS_AUTH_ISSUER_URI: ${MOVIE_TICKETS_AUTH_ISSUER_URI}
+      MOVIE_TICKETS_AUTH_JWK_SET_URI: ${MOVIE_TICKETS_AUTH_JWK_SET_URI}
+      MOVIE_TICKETS_POSTGRESQL_URL: ${MOVIE_TICKETS_POSTGRESQL_URL}
+      MOVIE_TICKETS_POSTGRESQL_USERNAME: ${MOVIE_TICKETS_POSTGRESQL_USERNAME}
+      MOVIE_TICKETS_POSTGRESQL_PASSWORD: ${MOVIE_TICKETS_POSTGRESQL_PASSWORD}
+  shopping-service:
+    build:
+      context: ./
+      dockerfile: ./shopping-service/Dockerfile
+    depends_on:
+      - eureka-server
+    environment:
+      MOVIE_TICKETS_EUREKA_URL: "http://eureka-server:8761/eureka"
+      MOVIE_TICKETS_AUTH_ISSUER_URI: ${MOVIE_TICKETS_AUTH_ISSUER_URI}
+      MOVIE_TICKETS_AUTH_JWK_SET_URI: ${MOVIE_TICKETS_AUTH_JWK_SET_URI}
+      MOVIE_TICKETS_POSTGRESQL_URL: ${MOVIE_TICKETS_POSTGRESQL_SHOPPING_URL}
+      MOVIE_TICKETS_POSTGRESQL_USERNAME: ${MOVIE_TICKETS_POSTGRESQL_SHOPPING_USERNAME}
+      MOVIE_TICKETS_POSTGRESQL_PASSWORD: ${MOVIE_TICKETS_POSTGRESQL_SHOPPING_PASSWORD}
+  user-service:
+    build:
+      context: ./
+      dockerfile: ./user-service/Dockerfile
+    depends_on:
+      - eureka-server
+    environment:
+      MOVIE_TICKETS_EUREKA_URL: "http://eureka-server:8761/eureka"
+      MOVIE_TICKETS_AUTH_ISSUER_URI: ${MOVIE_TICKETS_AUTH_ISSUER_URI}
+      MOVIE_TICKETS_AUTH_JWK_SET_URI: ${MOVIE_TICKETS_AUTH_JWK_SET_URI}
+      MOVIE_TICKETS_AUTH_USER_POOL_ID: ${MOVIE_TICKETS_AUTH_USER_POOL_ID}
+      MOVIE_TICKETS_AWS_USER_SERVICE_ACCESS_KEY: ${MOVIE_TICKETS_AWS_USER_SERVICE_ACCESS_KEY}
+      MOVIE_TICKETS_AWS_USER_SERVICE_SECRET_KEY: ${MOVIE_TICKETS_AWS_USER_SERVICE_SECRET_KEY}
