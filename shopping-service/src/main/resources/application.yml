@@ -13,7 +13,9 @@ spring:
       hibernate:
         format_sql: true
     show-sql: true
-
+  mvc:
+    converters:
+      preferred-json-mapper: jackson
   datasource:
     url: ${MOVIE_TICKETS_POSTGRESQL_URL}
     username: ${MOVIE_TICKETS_POSTGRESQL_USERNAME}
@@ -37,3 +39,7 @@ eureka:
     healthcheck:
       enabled: true
 
+com:
+  larasierra:
+    stripe_sk: ${MOVIE_TICKETS_STRIPE_SK}
+    stripe_whsec: ${MOVIE_TICKETS_STRIPE_WHSEC}

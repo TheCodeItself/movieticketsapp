@@ -7,7 +7,7 @@ public record DefaultOrderResponse(
         String orderId,
         String userId,
         String purchaseToken,
-        Boolean paid,
+        String status,
         Boolean cancel,
         Long totalCents,
         OffsetDateTime createdAt,

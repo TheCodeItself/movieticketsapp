@@ -12,6 +12,7 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 @Builder
 @AllArgsConstructor
@@ -35,9 +36,13 @@ public class Order extends BaseEntity<String> {
     @Column(name = "purchase_token")
     private String purchaseToken;
 
+    @Column(name = "payment_intent_id")
+    private String paymentIntentId;
+
+    @Convert(converter = OrderStatusConverter.class)
     @NotNull
-    @Column(name = "paid")
-    private Boolean paid;
+    @Column(name = "status")
+    private OrderStatus status;
 
     @NotNull
     @Column(name = "cancel")
@@ -48,12 +53,15 @@ public class Order extends BaseEntity<String> {
     @Column(name = "total_cents")
     private Long totalCents;
 
+    @Column(name = "order_code")
+    private UUID orderCode;
+
     @NotNull
-    @Column(name = "create_at")
+    @Column(name = "created_at")
     private OffsetDateTime createdAt;
 
     @Builder.Default
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "order", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     List<OrderItem> items = new ArrayList<>();
 
     public Order() {}
