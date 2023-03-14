@@ -22,7 +22,7 @@ public class ExceptionControllerAdvise extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(UnauthorizedAccessException.class)
     public ResponseEntity<?> unauthorizedAccess(UnauthorizedAccessException ex) {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ex.getPublicMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ex.getPublicMessage());
     }
 
     @ExceptionHandler(AppInternalErrorException.class)
