@@ -25,6 +25,8 @@ import com.stripe.net.Webhook;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -43,14 +45,16 @@ public class OrderService {
     private final AuthInfo authInfo;
     private final StripeClient stripeClient;
     private final PurchaseTokenUtil purchaseTokenUtil;
+    private final TransactionTemplate transactionTemplate;
 
-    public OrderService(OrderRepository orderRepository, ShoppingCartService shoppingCartService, SeatApiClient seatApiClient, AuthInfo authInfo, StripeClient stripeClient, PurchaseTokenUtil purchaseTokenUtil) {
+    public OrderService(OrderRepository orderRepository, ShoppingCartService shoppingCartService, SeatApiClient seatApiClient, AuthInfo authInfo, StripeClient stripeClient, PurchaseTokenUtil purchaseTokenUtil, PlatformTransactionManager transactionManager) {
         this.orderRepository = orderRepository;
         this.shoppingCartService = shoppingCartService;
         this.seatApiClient = seatApiClient;
         this.authInfo = authInfo;
         this.stripeClient = stripeClient;
         this.purchaseTokenUtil = purchaseTokenUtil;
+        this.transactionTemplate = new TransactionTemplate(transactionManager);
     }
 
     @PreAuthorize("hasRole('enduser')")
@@ -67,11 +71,19 @@ public class OrderService {
         var reserveForOrderRequest = buildReserveSeatForOrderRequest(cartItems, request.purchaseToken());
         seatApiClient.reserveForOrder(reserveForOrderRequest);
 
-        // 3. create the order
-        var order = buildOrder(cartItems, request.purchaseToken());
-        order = orderRepository.save(order);
+        Order order = transactionTemplate.execute(status -> {
+            // 3. create the order
+            var _order = buildOrder(cartItems, request.purchaseToken());
+            _order = orderRepository.save(_order);
 
-        // 4. create payment intent
+            // 4. clear shopping cart
+            shoppingCartService.clearUserItems();
+
+            return _order;
+        });
+
+        // 5. create payment intent
+        //noinspection DataFlowIssue
         StripeClient.PaymentIntentInfo intent = stripeClient.createPaymentIntent(order.getOrderId(), order.getTotalCents());
 
         return new InitOrderResponse(order.getOrderId(), intent.clientSecret(), order.getPurchaseToken());
