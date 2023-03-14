@@ -8,12 +8,12 @@ import com.larasierra.movietickets.movie.model.showtime.DefaultShowtimeResponse;
 import com.larasierra.movietickets.shared.exception.AppBadRequestException;
 import com.larasierra.movietickets.shared.exception.AppInternalErrorException;
 import com.larasierra.movietickets.shared.exception.AppResourceLockedException;
-import com.larasierra.movietickets.shared.util.IdUtil;
+import com.larasierra.movietickets.shared.util.AuthInfo;
+import com.larasierra.movietickets.shared.util.PurchaseTokenUtil;
 import jakarta.transaction.Transactional;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,13 +23,16 @@ import java.util.Optional;
 public class SeatService {
     private final SeatRepository seatRepository;
     private final ShowtimeService showtimeService;
-
     private final ScreenService screenService;
+    private final AuthInfo authInfo;
+    private final PurchaseTokenUtil purchaseTokenUtil;
 
-    public SeatService(SeatRepository seatRepository, ShowtimeService showtimeService, ScreenService screenService) {
+    public SeatService(SeatRepository seatRepository, ShowtimeService showtimeService, ScreenService screenService, AuthInfo authInfo, PurchaseTokenUtil purchaseTokenUtil) {
         this.seatRepository = seatRepository;
         this.showtimeService = showtimeService;
         this.screenService = screenService;
+        this.authInfo = authInfo;
+        this.purchaseTokenUtil = purchaseTokenUtil;
     }
 
     @PreAuthorize("hasRole('internal')")
@@ -100,7 +103,9 @@ public class SeatService {
     @PreAuthorize("hasRole('enduser')")
     @Transactional
     public void reserveForCart(String seatId, ReserveSeatForCartRequest request) {
-        // TODO: 01/03/2023 valid that the user can use the purchaseToken
+        // validate that the user is the token's owner
+        purchaseTokenUtil.validateToken(authInfo.userId(), request.purchaseToken());
+
         int count = seatRepository.reserveForCart(seatId, request.seatToken(), request.purchaseToken());
         if (count < 1) {
             throw new AppResourceLockedException();
@@ -109,14 +114,18 @@ public class SeatService {
 
     @PreAuthorize("hasRole('enduser')")
     public void removePurchaseToken(String seatId, RemovePurchaseTokenRequest request) {
-        // TODO: 01/03/2023 valid that the user can use the purchaseToken
+        // validate that the user is the token's owner
+        purchaseTokenUtil.validateToken(authInfo.userId(), request.purchaseToken());
         seatRepository.removePurchaseToken(seatId, request.purchaseToken());
     }
 
     @PreAuthorize("hasRole('enduser')")
     @Transactional
     public List<FullSeatResponse> reserveForOrder(ReserveSeatForOrderRequest request) {
-        // TODO: 01/03/2023 valid that the user can use the purchaseToken
+        // validate that the user is the token's owner
+        // is not required to validate the expiration, the user can reserve the seats if no other use has yet reserve the same seats
+        purchaseTokenUtil.validateToken(authInfo.userId(), request.userToken());
+
         List<Seat> seats = seatRepository.reserveForCart(request.seats(), request.userToken());
 
         if (seats.size() != request.seats().size()) {
@@ -129,28 +138,31 @@ public class SeatService {
     }
 
     /**
-     * Find the seat information for the given seatId. The seat will include the purchase token if it has expired and is still available for be purchase.
+     * Find the seat information for the given seatNumber. The seat will include the purchase token if it has expired and is still available for be purchase.
      * @param seatId the id of the seat
      * @return the seat for the given id
      */
     @PreAuthorize("permitAll()")
     public Optional<PublicSeatResponse> findById(String seatId) {
-        // TODO: 01/03/2023 The seat will include the purchase token if it has expired and is still available for be purchase 
         return seatRepository.findById(seatId)
-                .map(this::toPublicResponse);
+                .map(seat -> toPublicResponse(seat, true));
     }
 
     /**
      * Find all the seats for a given showtimeId. Each seat will include the purchase token if it has expired and is still available for be purchase.
+     *
      * @param showtimeId the id of the showtime to which the seats belong
      * @return a list of the seats found
      */
     @PreAuthorize("permitAll()")
-    public List<PublicSeatResponse> findAllByShowtimeId(String showtimeId) {
-        // TODO: 01/03/2023 Each seat will include the purchase token if it has expired and is still available for be purchase 
-        return seatRepository.findAllByShowtimeId(showtimeId).stream()
-                .map(this::toPublicResponse)
+    public FindAllByShowtimeResponse findAllByShowtimeId(String showtimeId) {
+        var seats = seatRepository.findAllByShowtimeId(showtimeId).stream()
+                .map(seat -> toPublicResponse(seat, false))
                 .toList();
+        return new FindAllByShowtimeResponse(
+            showtimeId,
+            seats
+        );
     }
 
     private FullSeatResponse toFullResponse(Seat seat) {
@@ -164,37 +176,34 @@ public class SeatService {
         );
     }
 
-    private PublicSeatResponse toPublicResponse(Seat seat) {
-        String purchaseToken = shouldIncludePurchaseToken(seat) ? seat.getPurchaseToken()
-                                                        : null;
+    private PublicSeatResponse toPublicResponse(Seat seat, boolean includeShowtimeId) {
+        var isAvailable = isSeatAvailable(seat);
+        String purchaseToken = isAvailable ? seat.getPurchaseToken()
+                                           : null;
         return new PublicSeatResponse(
-                seat.getSeatId(),
-                seat.getShowtimeId(),
-                seat.getAvailable(),
+                seat.getSeatNumber(),
+                includeShowtimeId ? seat.getShowtimeId() : null,
+                isAvailable,
                 purchaseToken
         );
     }
 
     /**
-     * Determine if the purchase token needs to be added to the response. This method returns false when the
-     * seat is not available, or it has an orderId, or it does not have a token, or if the token has not expired yet.
-     * It will return true only if the user that generated the token at first did not complete the purchase before the
-     * token expired
+     * Determine if the seat is available based on the available, orderId and purchaseToken values.
+     * If available is false or orderId is not null, this method returns false. If the purchaseToken is not null, this method returns true if the token is not expired
      * @param seat the seat to be evaluated
-     * @return true if the purchase token must be included in the response
+     * @return true only if the seat is available
      */
-    private boolean shouldIncludePurchaseToken(Seat seat) {
-        // if it is not available, or it has an orderId, or it does not have a token, do not include the token
-        if (!seat.getAvailable() || seat.getOrderId() != null || seat.getPurchaseToken() == null) {
+    private boolean isSeatAvailable(Seat seat) {
+        if (!seat.getAvailable() || seat.getOrderId() != null) {
             return false;
         }
 
-        String timeSortedId = seat.getPurchaseToken().substring(0, 13);
+        if (seat.getPurchaseToken() == null) {
+            return true;
+        }
 
-        Instant instant = IdUtil.extractInstant(timeSortedId);
-        Instant expiration = instant.plusSeconds(60 * 5);
-
-        // it must include the token only if expiration date is before the current date
-        return expiration.isBefore(Instant.now());
+        // it available only if expiration date is before the current date
+        return !purchaseTokenUtil.isTokenExpired(seat.getPurchaseToken());
     }
 }

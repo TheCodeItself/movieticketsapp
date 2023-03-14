@@ -43,4 +43,8 @@ public class Seat extends BaseEntity<String> {
     public String getId() {
         return seatId;
     }
+
+    public String getSeatNumber() {
+        return seatId.substring(seatId.lastIndexOf("-") + 1);
+    }
 }

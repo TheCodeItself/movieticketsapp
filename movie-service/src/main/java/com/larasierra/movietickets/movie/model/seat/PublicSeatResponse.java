@@ -1,9 +1,10 @@
 package com.larasierra.movietickets.movie.model.seat;
 
-import java.time.OffsetDateTime;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 public record PublicSeatResponse(
-        String seatId,
+        String seatNumber,
+        @JsonInclude(JsonInclude.Include.NON_NULL)
         String showtimeId,
         Boolean available,
         String purchaseToken

@@ -56,7 +56,7 @@ public class SeatController {
     }
 
     @GetMapping("/seat")
-    public List<PublicSeatResponse> findAllByShowtimeId(@ValidId @RequestParam String showtimeId) {
+    public FindAllByShowtimeResponse findAllByShowtimeId(@ValidId @RequestParam String showtimeId) {
         return seatService.findAllByShowtimeId(showtimeId);
     }
 }
