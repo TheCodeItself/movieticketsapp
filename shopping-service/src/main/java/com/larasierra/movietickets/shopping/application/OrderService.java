@@ -3,6 +3,7 @@ package com.larasierra.movietickets.shopping.application;
 import com.larasierra.movietickets.shared.exception.AppBadRequestException;
 import com.larasierra.movietickets.shared.util.AuthInfo;
 import com.larasierra.movietickets.shared.util.IdUtil;
+import com.larasierra.movietickets.shared.util.PurchaseTokenUtil;
 import com.larasierra.movietickets.shopping.domain.Order;
 import com.larasierra.movietickets.shopping.domain.OrderItem;
 import com.larasierra.movietickets.shopping.domain.OrderStatus;
@@ -40,20 +41,21 @@ public class OrderService {
     private final ShoppingCartService shoppingCartService;
     private final SeatApiClient seatApiClient;
     private final AuthInfo authInfo;
-
     private final StripeClient stripeClient;
+    private final PurchaseTokenUtil purchaseTokenUtil;
 
-    public OrderService(OrderRepository orderRepository, ShoppingCartService shoppingCartService, SeatApiClient seatApiClient, AuthInfo authInfo, StripeClient stripeClient) {
+    public OrderService(OrderRepository orderRepository, ShoppingCartService shoppingCartService, SeatApiClient seatApiClient, AuthInfo authInfo, StripeClient stripeClient, PurchaseTokenUtil purchaseTokenUtil) {
         this.orderRepository = orderRepository;
         this.shoppingCartService = shoppingCartService;
         this.seatApiClient = seatApiClient;
         this.authInfo = authInfo;
         this.stripeClient = stripeClient;
+        this.purchaseTokenUtil = purchaseTokenUtil;
     }
 
     @PreAuthorize("hasRole('enduser')")
     public InitOrderResponse create(CreateOrderRequest request) {
-        // TODO: 26/02/2023 validate purchase token
+        purchaseTokenUtil.validateToken(authInfo.userId(), request.purchaseToken());
 
         // 1. get items from shopping cart
         List<ShoppingCartItemResponse> cartItems = shoppingCartService.findAllUserItems();

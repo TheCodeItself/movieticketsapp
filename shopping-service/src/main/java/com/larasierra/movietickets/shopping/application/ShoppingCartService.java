@@ -1,10 +1,10 @@
 package com.larasierra.movietickets.shopping.application;
 
-import com.larasierra.movietickets.shared.exception.AppInternalErrorException;
+import com.larasierra.movietickets.shared.exception.AppBadRequestException;
 import com.larasierra.movietickets.shared.exception.AppResourceLockedException;
-import com.larasierra.movietickets.shared.exception.UnauthorizedAccessException;
 import com.larasierra.movietickets.shared.util.AuthInfo;
 import com.larasierra.movietickets.shared.util.IdUtil;
+import com.larasierra.movietickets.shared.util.PurchaseTokenUtil;
 import com.larasierra.movietickets.shopping.domain.ShoppingCartItem;
 import com.larasierra.movietickets.shopping.domain.ShoppingCartItemPk;
 import com.larasierra.movietickets.shopping.external.apiclient.SeatApiClient;
@@ -21,9 +21,6 @@ import jakarta.validation.constraints.NotNull;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.Base64;
 import java.util.List;
 
 @Service
@@ -32,34 +29,36 @@ public class ShoppingCartService {
     private final AuthInfo authInfo;
     private final SeatApiClient seatApiClient;
     private final ShowtimeApiClient showtimeApiClient;
+    private final PurchaseTokenUtil purchaseTokenUtil;
 
-    public ShoppingCartService(ShoppingCartItemRepository shoppingCartItemRepository, AuthInfo authInfo, SeatApiClient seatApiClient, ShowtimeApiClient showtimeApiClient) {
+    public ShoppingCartService(ShoppingCartItemRepository shoppingCartItemRepository, AuthInfo authInfo, SeatApiClient seatApiClient, ShowtimeApiClient showtimeApiClient, PurchaseTokenUtil purchaseTokenUtil) {
         this.shoppingCartItemRepository = shoppingCartItemRepository;
         this.authInfo = authInfo;
         this.seatApiClient = seatApiClient;
         this.showtimeApiClient = showtimeApiClient;
+        this.purchaseTokenUtil = purchaseTokenUtil;
     }
 
     @PreAuthorize("hasRole('enduser')")
     public String generatePurchaseToken() {
-        // TODO: 27/02/2023 retrieve the secret
-        String secret = "12345";
-
         String timeSortedId = IdUtil.next();
 
         // only the user who requested the token can use it to add a seat to the cart or place an order
-        String hash = generatePurchaseTokenHash(timeSortedId, authInfo.userId(), secret);
+        String token = purchaseTokenUtil.generateToken(timeSortedId, authInfo.userId());
 
         // delete existing cart items
         shoppingCartItemRepository.deleteByUserId(authInfo.userId());
 
-        return timeSortedId + ":" + hash;
+        return token;
     }
 
     @PreAuthorize("hasRole('enduser')")
     public void addSeatToCart(AddSeatToCartRequest request) {
-        // TODO: 01/03/2023 token expiration need to be validated too
-        validateUserPurchaseToken(request.purchaseToken());
+        purchaseTokenUtil.validateToken(authInfo.userId(), request.purchaseToken());
+
+        if (purchaseTokenUtil.isTokenExpired(request.purchaseToken())) {
+            throw new AppBadRequestException("the token has expired");
+        }
 
         try {
             var reserveSeatForCartApiRequest = new ReserveSeatForCartApiRequest(request.seatToken(), request.purchaseToken());
@@ -91,41 +90,16 @@ public class ShoppingCartService {
     }
 
     @PreAuthorize("hasRole('enduser')")
+    public void clearUserItems() {
+      shoppingCartItemRepository.deleteByUserId(authInfo.userId());
+    }
+
+    @PreAuthorize("hasRole('enduser')")
     public List<ShoppingCartItemResponse> findAllUserItems() {
         return shoppingCartItemRepository.findAllByShoppingCartItemPk_UserId(authInfo.userId())
                 .stream()
                 .map(this::toDefaultResponse)
                 .toList();
-    }
-
-    private void validateUserPurchaseToken(String purchaseToken) {
-        String secret = "12345";
-
-        String[] split = purchaseToken.split(":");
-        String providedTimeSortedId = split[0];
-        String providedHash = split[1];
-
-        // only the user who requested the token can use it to add a seat to the cart or place an order
-        String calculatedHash = generatePurchaseTokenHash(providedTimeSortedId, authInfo.userId(), secret);
-
-        if (!calculatedHash.equals(providedHash)) {
-            throw new UnauthorizedAccessException();
-        }
-    }
-
-    private String generatePurchaseTokenHash(String timeSortedId, String userId, String secret) {
-        MessageDigest messageDigest;
-        try {
-            messageDigest = MessageDigest.getInstance("SHA3-256");
-        } catch (NoSuchAlgorithmException e) {
-            throw new AppInternalErrorException();
-        }
-
-        String plainText = timeSortedId + ":" + userId + ":" + secret;
-
-        byte[] hashBytes = messageDigest.digest(plainText.getBytes());
-
-        return Base64.getEncoder().encodeToString(hashBytes);
     }
 
     private ShoppingCartItemResponse toDefaultResponse(ShoppingCartItem item) {
@@ -140,4 +114,6 @@ public class ShoppingCartService {
     private String extractShowtimeIdFromSeatId(@NotNull String seatId) {
         return seatId.substring(0, 13);
     }
+
+
 }
