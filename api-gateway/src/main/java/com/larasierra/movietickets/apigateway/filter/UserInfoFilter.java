@@ -27,6 +27,10 @@ public class UserInfoFilter implements GlobalFilter {
             return chain.filter(exchange);
         }
 
+        if (exchange.getRequest().getPath().value().startsWith("/v3/api-docs/")) {
+            return chain.filter(exchange);
+        }
+
         return ReactiveSecurityContextHolder.getContext()
                 .map(SecurityContext::getAuthentication)
                 .map(Authentication::getPrincipal)

@@ -26,6 +26,7 @@ public class SecurityConfig {
         http
             .csrf().disable()
             .authorizeHttpRequests(authorize -> authorize
+                    .requestMatchers("/v3/api-docs/movie-media-service*/**", "/swagger-ui*/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/media", "/media/file/{fileName}").permitAll()
                     .anyRequest().authenticated()
             )

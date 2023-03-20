@@ -27,6 +27,7 @@ public class SecurityConfig {
         http
             .csrf().disable()
             .authorizeHttpRequests(authorize -> authorize
+                .requestMatchers("/v3/api-docs/purchase-service*/**", "/swagger-ui*/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/stripe/webhook").permitAll()
                 .anyRequest().hasRole("enduser")
             )

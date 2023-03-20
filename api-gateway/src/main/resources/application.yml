@@ -19,19 +19,19 @@ spring:
       - id: user-service
         uri: lb://user-service
         predicates:
-          - Path=/user/**
+          - Path=/user/**, /v3/api-docs/user-service
       - id: movie-service
         uri: lb://movie-service
         predicates:
-          - Path=/movie/**, /screen/**, /seat/**, /showtime/**, /theater/**
+          - Path=/movie/**, /screen/**, /seat/**, /showtime/**, /theater/**, /v3/api-docs/movie-service
       - id: movie-media-service
         uri: lb://movie-media-service
         predicates:
-          - Path=/media/**
+          - Path=/media/**, /v3/api-docs/movie-media-service
       - id: shopping-service
         uri: lb://shopping-service
         predicates:
-          - Path=/order/**, /cart/**, /stripe/webhook/**
+          - Path=/order/**, /cart/**, /stripe/webhook/**, /v3/api-docs/purchase-service
   security:
     oauth2:
       client:
@@ -58,6 +58,20 @@ spring:
   codec:
     log-request-details: true
 
+springdoc:
+  swagger-ui:
+    urls:
+      - name: purchase-service
+        url: /v3/api-docs/purchase-service
+      - name: user-service
+        url: /v3/api-docs/user-service
+      - name: movie-service
+        url: /v3/api-docs/movie-service
+      - name: movie-media-service
+        url: /v3/api-docs/movie-media-service
+  webjars:
+    prefix: ""
+
 logging:
   level:
     org.springframework.web.reactive.function.client.ExchangeFunctions: TRACE
@@ -68,4 +82,3 @@ logging:
             multipart: trace
         security: trace
     reactor.netty.http.client.HttpClient: DEBUG
-

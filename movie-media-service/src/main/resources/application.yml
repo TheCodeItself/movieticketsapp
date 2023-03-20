@@ -38,6 +38,10 @@ eureka:
     healthcheck:
       enabled: true
 
+springdoc:
+  api-docs:
+    path: "/v3/api-docs/movie-media-service"
+
 logging:
   level:
     org:

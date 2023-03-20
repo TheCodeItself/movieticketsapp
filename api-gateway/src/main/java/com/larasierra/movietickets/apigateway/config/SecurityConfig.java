@@ -30,6 +30,7 @@ public class SecurityConfig {
                 .authenticationEntryPoint(new HttpStatusServerEntryPoint(HttpStatus.UNAUTHORIZED)).and()
             .authorizeExchange(exchange -> exchange
                 .pathMatchers(HttpMethod.POST, "/stripe/webhook").permitAll()
+                .pathMatchers("/v3/api-docs/**", "/swagger-ui*/**").permitAll()
                 .anyExchange().authenticated()
             )
             .oauth2Login().and()

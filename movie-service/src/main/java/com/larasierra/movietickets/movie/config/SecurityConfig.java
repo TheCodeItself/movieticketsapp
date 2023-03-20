@@ -41,6 +41,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/faq", "/faq/{id}").permitAll()
                 // organizer details
                 .requestMatchers(HttpMethod.GET, "/organizer/{id}").permitAll()
+                // open api
+                .requestMatchers("/v3/api-docs/movie-service*/**", "/swagger-ui*/**").permitAll()
                 // any other request must be authenticated
                 .anyRequest().authenticated()
             )

@@ -31,6 +31,10 @@ eureka:
     healthcheck:
       enabled: true
 
+springdoc:
+  api-docs:
+    path: "/v3/api-docs/user-service"
+
 logging:
   level:
     org:

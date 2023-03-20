@@ -65,6 +65,10 @@
             <groupId>com.github.f4b6a3</groupId>
             <artifactId>tsid-creator</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+        </dependency>
     </dependencies>
 
 </project>

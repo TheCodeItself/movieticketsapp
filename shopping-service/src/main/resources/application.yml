@@ -39,6 +39,10 @@ eureka:
     healthcheck:
       enabled: true
 
+springdoc:
+  api-docs:
+    path: "/v3/api-docs/purchase-service"
+
 com:
   larasierra:
     stripe_sk: ${MOVIE_TICKETS_STRIPE_SK}
