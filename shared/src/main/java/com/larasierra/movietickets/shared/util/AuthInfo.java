@@ -1,6 +1,5 @@
 package com.larasierra.movietickets.shared.util;
 
-
 import com.larasierra.movietickets.shared.exception.UnauthorizedAccessException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.security.core.Authentication;
@@ -12,8 +11,6 @@ import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
-
-import java.util.Objects;
 
 public class AuthInfo {
 
@@ -72,15 +69,6 @@ public class AuthInfo {
         return jwt.getSubject();
     }
 
-    /**
-     * Obtains the organizerId from the IdToken header
-     * @return the organizer extracted from the IdToken header
-     * @throws UnauthorizedAccessException if no IdToken header is found in the request, or if no organizerId claim is found in the token
-     */
-    public String  organizerId() {
-        return getRequiredCustomAttribute("custom:organizerId");
-    }
-
     public String getRequiredCustomAttribute(String attributeName) {
         String idToken = getRequestHeader("IdToken");
 
@@ -95,50 +83,6 @@ public class AuthInfo {
         }
 
         return attribute;
-    }
-
-    /**
-     * Valid that the organizerId received in a request belong to the user. This method use the IdToken Header for the test
-     * @param organizerId the organizerId to test against the IdToken
-     * @throws UnauthorizedAccessException if the user is unauthorized for the given organizerId
-     * @throws IllegalStateException If the validation cannot be performed
-     */
-    public void validOrganizer(String organizerId) {
-        if (organizerId == null || organizerId.isBlank()) {
-            throw new UnauthorizedAccessException();
-        }
-
-        String idToken = getRequestHeader("IdToken");
-
-        if (idToken == null) {
-            throw new UnauthorizedAccessException();
-        }
-
-        String organizerIdClaim = getTokenIdClaim(idToken, "custom:organizerId");
-
-        if (!Objects.equals(organizerId, organizerIdClaim)) {
-            throw new UnauthorizedAccessException();
-        }
-    }
-
-    /**
-     * Determine if the given organizerId is the same organizerId that is present in the IdToken
-     * @param organizerId the organizerId to test against the IdToken
-     * @param idToken the IdToken to use for the test
-     * @return true if the organizerId is the same as the one present in the IdToken and false otherwise
-     */
-    public boolean isValidOrganizer(String organizerId, String idToken) {
-        if(organizerId == null || organizerId.isBlank()) {
-            return false;
-        }
-
-        if (idToken == null) {
-            return false;
-        }
-
-        String organizerIdClaim = getTokenIdClaim(idToken, "custom:organizerId");
-
-        return Objects.equals(organizerId, organizerIdClaim);
     }
 
     private String getTokenIdClaim(String idToken, String claimName) {

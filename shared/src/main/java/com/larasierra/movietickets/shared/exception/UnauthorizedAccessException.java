@@ -7,10 +7,6 @@ public class UnauthorizedAccessException extends RuntimeException {
         publicMessage = null;
     }
 
-    public UnauthorizedAccessException(String message) {
-        publicMessage = message;
-    }
-
     public String getPublicMessage() {
         return publicMessage;
     }
