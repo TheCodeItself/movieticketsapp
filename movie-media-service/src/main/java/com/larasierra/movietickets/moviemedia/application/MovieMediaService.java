@@ -9,6 +9,7 @@ import com.larasierra.movietickets.moviemedia.model.CreateMovieMediaRequest;
 import com.larasierra.movietickets.moviemedia.model.DefaultMovieMediaResponse;
 import com.larasierra.movietickets.moviemedia.model.GetFileResponse;
 import com.larasierra.movietickets.shared.exception.AppBadRequestException;
+import com.larasierra.movietickets.shared.exception.AppInternalErrorException;
 import com.larasierra.movietickets.shared.exception.AppResourceNotFoundException;
 import com.larasierra.movietickets.shared.util.IdUtil;
 import feign.FeignException;
@@ -85,11 +86,12 @@ public class MovieMediaService {
             movieMediaS3Repository.upload(url, multipartFile.getSize(), multipartFile.getInputStream());
         } catch (AwsServiceException | SdkClientException ex) {
             movieMediaRepository.deleteByMovieMediaId(id);
-            throw new RuntimeException("upload cannot be completed");
+            throw new AppInternalErrorException();
         }
 
         // when the file has been uploaded successfully, update the DB record as available
         movieMediaRepository.markAvailable(id);
+        media.setAvailable(true);
 
         return toDefaultResponse(media);
     }
@@ -155,5 +157,6 @@ public class MovieMediaService {
 
         return filename.trim();
     }
+
     private final String[] PERMITTED_FILE_EXTENSIONS = {"png", "jpg", "mp4"};
 }
