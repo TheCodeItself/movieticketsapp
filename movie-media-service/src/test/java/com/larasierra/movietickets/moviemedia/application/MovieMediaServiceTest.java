@@ -46,7 +46,7 @@ class MovieMediaServiceTest {
     void create() throws IOException {
         // given
         when(movieApiClient.findById(anyString())).thenReturn(movieApiResponse());
-        when(movieMediaRepository.save(isA(MovieMedia.class))).then(returnsFirstArg());
+        when(movieMediaRepository.save(any(MovieMedia.class))).then(returnsFirstArg());
         doNothing().when(movieMediaS3Repository).upload(anyString(), anyLong(), any());
         doNothing().when(movieMediaRepository).markAvailable(anyString());
 

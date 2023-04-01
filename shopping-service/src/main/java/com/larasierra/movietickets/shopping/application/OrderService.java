@@ -4,6 +4,7 @@ import com.larasierra.movietickets.shared.exception.AppBadRequestException;
 import com.larasierra.movietickets.shared.util.AuthInfo;
 import com.larasierra.movietickets.shared.util.IdUtil;
 import com.larasierra.movietickets.shared.util.PurchaseTokenUtil;
+import com.larasierra.movietickets.shared.util.TransactionTemplateFactory;
 import com.larasierra.movietickets.shopping.domain.Order;
 import com.larasierra.movietickets.shopping.domain.OrderItem;
 import com.larasierra.movietickets.shopping.domain.OrderStatus;
@@ -25,7 +26,6 @@ import com.stripe.net.Webhook;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.OffsetDateTime;
@@ -47,14 +47,14 @@ public class OrderService {
     private final PurchaseTokenUtil purchaseTokenUtil;
     private final TransactionTemplate transactionTemplate;
 
-    public OrderService(OrderRepository orderRepository, ShoppingCartService shoppingCartService, SeatApiClient seatApiClient, AuthInfo authInfo, StripeClient stripeClient, PurchaseTokenUtil purchaseTokenUtil, PlatformTransactionManager transactionManager) {
+    public OrderService(OrderRepository orderRepository, ShoppingCartService shoppingCartService, SeatApiClient seatApiClient, AuthInfo authInfo, StripeClient stripeClient, PurchaseTokenUtil purchaseTokenUtil, TransactionTemplateFactory transactionTemplateFactory) {
         this.orderRepository = orderRepository;
         this.shoppingCartService = shoppingCartService;
         this.seatApiClient = seatApiClient;
         this.authInfo = authInfo;
         this.stripeClient = stripeClient;
         this.purchaseTokenUtil = purchaseTokenUtil;
-        this.transactionTemplate = new TransactionTemplate(transactionManager);
+        this.transactionTemplate = transactionTemplateFactory.create();
     }
 
     @PreAuthorize("hasRole('enduser')")
